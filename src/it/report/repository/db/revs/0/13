@@ -1,0 +1,84 @@
+id: 1-13.0.r13/0
+type: dir
+count: 0
+cpath: /tags/project-3.0.0
+copyroot: 0 /
+
+PLAIN
+K 13
+project-1.0.0
+V 14
+dir 1-4.0.r4/0
+K 13
+project-1.1.0
+V 14
+dir 1-5.0.r5/0
+K 13
+project-1.1.1
+V 14
+dir 1-6.0.r6/0
+K 13
+project-1.2.0
+V 14
+dir 1-7.0.r7/0
+K 13
+project-1.3.0
+V 14
+dir 1-8.0.r8/0
+K 13
+project-2.0.0
+V 14
+dir 1-9.0.r9/0
+K 13
+project-2.0.1
+V 16
+dir 1-10.0.r10/0
+K 13
+project-2.0.2
+V 16
+dir 1-11.0.r11/0
+K 13
+project-2.5.0
+V 16
+dir 1-12.0.r12/0
+K 13
+project-3.0.0
+V 16
+dir 1-13.0.r13/0
+END
+ENDREP
+id: 0-2.0.r13/493
+type: dir
+pred: 0-2.0.r12/452
+count: 10
+text: 13 78 402 402 62fbbb9794670b66855ac81b1eee46f5
+cpath: /tags
+copyroot: 0 /
+
+PLAIN
+K 8
+branches
+V 14
+dir 0-3.0.r3/0
+K 4
+tags
+V 17
+dir 0-2.0.r13/493
+K 5
+trunk
+V 14
+dir 0-1.0.r1/0
+END
+ENDREP
+id: 0.0.r13/744
+type: dir
+pred: 0.0.r12/702
+count: 13
+text: 13 632 99 99 74c596ec5c55eeaa72f21003e04016ac
+cpath: /
+copyroot: 0 /
+
+_1.0.t12-c add-dir false false /tags/project-3.0.0
+
+
+744 874

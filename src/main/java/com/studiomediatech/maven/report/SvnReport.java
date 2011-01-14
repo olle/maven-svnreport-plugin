@@ -78,10 +78,10 @@ public class SvnReport extends AbstractMavenReport {
   }
 
   @Override
-  protected void executeReport(Locale locale) {
+  protected void executeReport(Locale locale) {    
     getLog().info(SEPARATOR);
-    getLog().info("S V N - R E P O R T");
-    getLog().info("SVN report successfully generated.");
+    getLog().info("Generating \"Subversion\" report.");
+    getLog().info("SCM URL: " + this.project.getScm().getUrl());
     getLog().info(SEPARATOR);
   }
 }

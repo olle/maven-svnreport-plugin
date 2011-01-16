@@ -7,7 +7,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
   <scm>
-    <connection>scm:svn:file://${project.basedir}/repository</connection>
+    <connection>scm:svn:file://@project.basedir@/src/test/resources/repository</connection>
   </scm>
   <reporting>
     <plugins>

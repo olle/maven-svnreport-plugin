@@ -1,17 +1,21 @@
 package com.studiomediatech.maven.report;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Locale;
+import java.util.TreeSet;
 
+import com.studiomediatech.svn.SvnUtils;
+import com.studiomediatech.svn.Tag;
+import com.studiomediatech.svn.TagUtils;
+
+import org.apache.maven.doxia.sink.Sink;
 import org.apache.maven.doxia.siterenderer.Renderer;
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.reporting.AbstractMavenReport;
-import org.tmatesoft.svn.core.ISVNDirEntryHandler;
-import org.tmatesoft.svn.core.SVNDirEntry;
-import org.tmatesoft.svn.core.SVNException;
-import org.tmatesoft.svn.core.SVNURL;
-import org.tmatesoft.svn.core.wc.SVNClientManager;
-import org.tmatesoft.svn.core.wc.SVNRevision;
 
 /**
  * @author olle
@@ -28,7 +32,7 @@ public class SvnReport extends AbstractMavenReport {
    * @required
    * @readonly
    */
-  private MavenProject project;
+  MavenProject project;
 
   /**
    * Doxia Site Renderer.
@@ -37,7 +41,7 @@ public class SvnReport extends AbstractMavenReport {
    * @required
    * @readonly
    */
-  private Renderer renderer;
+  Renderer renderer;
 
   /**
    * The report output directory.
@@ -46,14 +50,10 @@ public class SvnReport extends AbstractMavenReport {
    * @required
    * @readonly
    */
-  private File outputDirectory;
+  File outputDirectory;
 
-  /**
-   * @component
-   * @required
-   * @readonly
-   */
-  private SVNClientManager svnClientManager;
+  final Collection<Tag> tags = new TreeSet<Tag>();
+  final List<Collection<Tag>> partitionedTags = new ArrayList<Collection<Tag>>();
 
   @Override
   public String getOutputName() {
@@ -62,7 +62,7 @@ public class SvnReport extends AbstractMavenReport {
 
   @Override
   public String getName(Locale locale) {
-    return "svn-report";
+    return "SVN Report";
   }
 
   @Override
@@ -92,28 +92,88 @@ public class SvnReport extends AbstractMavenReport {
 
   @Override
   protected void executeReport(Locale locale) {
-    getLog().info(SEPARATOR);
-    getLog().info("Generating \"Subversion\" report.");
-    getLog().info("SCM CONNECTION: " + this.project.getScm().getConnection());
+    fetchTagList();
+    partitionTagsByMajorMinor();
+    generatePlainTextReportOutput(getLog(), locale);
+    generateHtmlReportOutput(getSink(), locale);
+  }
 
-    try {
-      SVNURL svnurl = SVNURL.parseURIEncoded(this.project.getScm().getConnection());
-      this.svnClientManager.getLogClient().doList(svnurl,
-                                                  SVNRevision.UNDEFINED,
-                                                  SVNRevision.UNDEFINED,
-                                                  false,
-                                                  false,
-                                                  new ISVNDirEntryHandler() {
-                                                    @Override
-                                                    public void handleDirEntry(SVNDirEntry dirEntry) {
-                                                      getLog().info("-> " + dirEntry.getName());
-                                                    }
-                                                  });
+  void fetchTagList() {
+    String svnUrl = SvnUtils.makeCleanUrl(this.project.getScm().getConnection());
+    String tagsUrl = SvnUtils.makeTagsUrl(svnUrl);
+    List<String> tags = SvnUtils.fetchTags(tagsUrl);
+    for (String tag : tags) {
+      this.tags.add(new Tag(tag));
     }
-    catch (SVNException e) {
-      e.printStackTrace();
-    }
+  }
 
-    getLog().info(SEPARATOR);
+  void partitionTagsByMajorMinor() {
+    Collection<Tag> majorMinorTags = TagUtils.filterUniqueMajorMinors(this.tags);
+    for (Tag t : majorMinorTags) {
+      Collection<Tag> patchTags = TagUtils.filterByMajorMinor(this.tags,
+                                                              t.getMajorVersion(),
+                                                              t.getMinorVersion());
+      this.partitionedTags.add(patchTags);
+    }
+  }
+
+  void generatePlainTextReportOutput(Log log, Locale locale) {
+    log.info(SvnReport.SEPARATOR);
+    log.info("Generating \"Subversion\" report.");
+    log.info("");
+    if (this.partitionedTags.size() > 0) {
+      log.info(" [tags]");
+      for (Collection<Tag> tags : this.partitionedTags) {
+        String line = "   +";
+        for (Tag t : tags) {
+          line += "--[" + t.getMajorVersion() + "." + t.getMinorVersion() + "." + t.getPatchVersion() + "]";
+        }
+        log.info("   |");
+        log.info(line);
+      }
+    }
+    log.info(SvnReport.SEPARATOR);
+  }
+
+  void generateHtmlReportOutput(Sink sink, Locale locale) {
+    pageHeading(sink, locale);
+    pageBody(sink, locale);
+  }
+
+  private void pageHeading(Sink sink, Locale locale) {
+    String title = "Subversion Project Report";
+    sink.head();
+    sink.title();
+    sink.text(title);
+    sink.title_();
+    sink.head_();
+    sink.body();
+    sink.section1();
+    sink.sectionTitle1();
+    sink.text(title);
+    sink.sectionTitle1_();
+    sink.paragraph();
+    sink.text(getDescription(locale));
+    sink.paragraph_();
+    sink.section1_();
+  }
+
+  @SuppressWarnings("deprecation")
+  private void pageBody(Sink sink, Locale locale) {
+    sink.section2();
+    sink.verbatim(true);
+    sink.text("[tags]\n");
+    if (this.partitionedTags.size() > 0) {
+      for (Collection<Tag> tags : this.partitionedTags) {
+        String line = "  +";
+        for (Tag t : tags) {
+          line += "--[" + t.getMajorVersion() + "." + t.getMinorVersion() + "." + t.getPatchVersion() + "]";
+        }
+        sink.text("  |\n");
+        sink.text(line + "\n");
+      }
+    }
+    sink.verbatim_();
+    sink.section2_();
   }
 }

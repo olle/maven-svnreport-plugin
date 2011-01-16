@@ -1,0 +1,48 @@
+ This is a small, and very simple, plug-in for Maven, that generates a
+ report from the SVN repository of the project it is used in.
+
+ Everything is up to convention at this point, so the plug-in assumes
+ the common style of structure in a Subversion repo:
+
+ branches/
+ tags/
+ trunk/
+
+ If the repository is setup like this, the plug-in can generate the a
+ report showing the current line of tagged releases.
+
+ Versions are of course also down to convention, and at the moment the
+ plug-in only knows the common Maven version format:
+
+ [some-project-name]-[major].[minor].[patch]
+
+ For example: my-project-1.2.0
+
+ If this type of versioning is strictly used, the plug-in report will
+ show a list of releases where patches are horizontal and each major-
+ minor release are listed vertically.
+ 
+ To use it, do the following:
+
+ 1) Checkout and install the plug-in:
+    > git clone git@github.com:olle/maven-svnreport-plugin.git
+    > cd maven-svnreport-plugin
+    > mvn install
+
+ 2) Add the artifact config to the reporting section of a POM:
+  ...
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>com.studiomediatech</groupId>
+        <artifactId>maven-svnreport-plugin</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+      </plugin>
+    </plugins>
+  </reporting>
+  ...
+
+ 3) Just run the site generation goal and enjoy:
+    > mvn site
+
+ Good luck!

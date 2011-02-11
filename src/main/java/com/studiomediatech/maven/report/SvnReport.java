@@ -13,6 +13,7 @@ import com.studiomediatech.svn.TagUtils;
 
 import org.apache.maven.doxia.sink.Sink;
 import org.apache.maven.doxia.siterenderer.Renderer;
+import org.apache.maven.model.Scm;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.reporting.AbstractMavenReport;
@@ -52,7 +53,7 @@ public class SvnReport extends AbstractMavenReport {
    * @required
    * @readonly
    */
-  MavenProject project;
+  volatile MavenProject project;
 
   /**
    * Doxia Site Renderer.
@@ -61,7 +62,7 @@ public class SvnReport extends AbstractMavenReport {
    * @required
    * @readonly
    */
-  Renderer renderer;
+  volatile Renderer renderer;
 
   /**
    * The report output directory.
@@ -70,7 +71,7 @@ public class SvnReport extends AbstractMavenReport {
    * @required
    * @readonly
    */
-  File outputDirectory;
+  volatile File outputDirectory;
 
   final Collection<Tag> tags = new TreeSet<Tag>();
   final List<Collection<Tag>> partitionedTags = new ArrayList<Collection<Tag>>();
@@ -92,17 +93,35 @@ public class SvnReport extends AbstractMavenReport {
 
   @Override
   protected Renderer getSiteRenderer() {
-    return this.renderer;
+    if (this.renderer == null) {
+      throw new IllegalStateException("renderer must not be empty");
+    }
+    else {
+      return this.renderer;
+    }
   }
 
   @Override
   protected String getOutputDirectory() {
-    return this.outputDirectory.getAbsolutePath();
+    if (this.outputDirectory == null) {
+      throw new IllegalStateException("outputDirectory must not be empty");
+    }
+    try {
+      return this.outputDirectory.getAbsolutePath();
+    }
+    catch (SecurityException e) {
+      throw new RuntimeException("unable to resolve absolute path to output directory", e);
+    }
   }
 
   @Override
   protected MavenProject getProject() {
-    return this.project;
+    if (this.project == null) {
+      throw new IllegalStateException("project must not be empty");
+    }
+    else {
+      return this.project;
+    }
   }
 
   @Override
@@ -129,7 +148,14 @@ public class SvnReport extends AbstractMavenReport {
   }
 
   private String getScmConnection() {
-    String connection = this.project.getScm().getConnection();
+    if (this.project == null) {
+      throw new IllegalStateException("project must not be empty");
+    }
+    Scm scm = this.project.getScm();
+    if (scm == null) {
+      throw new IllegalArgumentException("project scm must not be empty");
+    }
+    String connection = scm.getConnection();
     if (connection == null) {
       throw new IllegalArgumentException("project scm connection must not be empty");
     }
@@ -138,10 +164,10 @@ public class SvnReport extends AbstractMavenReport {
 
   void partitionTagsByMajorMinor() {
     Collection<Tag> majorMinorTags = TagUtils.filterUniqueMajorMinors(this.tags);
-    for (Tag t : majorMinorTags) {
-      Collection<Tag> patchTags = TagUtils.filterByMajorMinor(this.tags,
-                                                              t.getMajorVersion(),
-                                                              t.getMinorVersion());
+    for (Tag tag : majorMinorTags) {
+      int major = tag.getMajorVersion();
+      int minor = tag.getMinorVersion();
+      Collection<Tag> patchTags = TagUtils.filterByMajorMinor(this.tags, major, minor);
       this.partitionedTags.add(patchTags);
     }
   }
@@ -154,15 +180,25 @@ public class SvnReport extends AbstractMavenReport {
     if (this.partitionedTags.size() > 0) {
       log.info(" [tags]");
       for (Collection<Tag> tags : this.partitionedTags) {
-        String line = "   +";
-        for (Tag t : tags) {
-          line += "--[" + t.getMajorVersion() + "." + t.getMinorVersion() + "." + t.getPatchVersion() + "]";
+        StringBuilder line = new StringBuilder("   +");
+        for (Tag tag : tags) {
+          appendTagTextToLine(line, tag);
         }
         log.info("   |");
-        log.info(line);
+        log.info(line.toString());
       }
     }
     log.info("");
+  }
+
+  private void appendTagTextToLine(StringBuilder sb, Tag t) {
+    sb.append("--[")
+      .append(t.getMajorVersion())
+      .append(".")
+      .append(t.getMinorVersion())
+      .append(".")
+      .append(t.getPatchVersion())
+      .append("]");
   }
 
   void generateHtmlReportOutput(Sink sink, Locale locale) {
@@ -195,12 +231,12 @@ public class SvnReport extends AbstractMavenReport {
     sink.text("[tags]\n");
     if (this.partitionedTags.size() > 0) {
       for (Collection<Tag> tags : this.partitionedTags) {
-        String line = "  +";
-        for (Tag t : tags) {
-          line += "--[" + t.getMajorVersion() + "." + t.getMinorVersion() + "." + t.getPatchVersion() + "]";
+        StringBuilder line = new StringBuilder("  +");
+        for (Tag tag : tags) {
+          appendTagTextToLine(line, tag);
         }
         sink.text("  |\n");
-        sink.text(line + "\n");
+        sink.text(line.toString() + "\n");
       }
     }
     sink.verbatim_();

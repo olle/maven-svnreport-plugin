@@ -7,12 +7,14 @@ import org.tmatesoft.svn.core.ISVNDirEntryHandler;
 import org.tmatesoft.svn.core.SVNDirEntry;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.SVNURL;
+import org.tmatesoft.svn.core.auth.ISVNAuthenticationManager;
 import org.tmatesoft.svn.core.internal.io.dav.DAVRepositoryFactory;
 import org.tmatesoft.svn.core.internal.io.fs.FSRepositoryFactory;
 import org.tmatesoft.svn.core.internal.io.svn.SVNRepositoryFactoryImpl;
 import org.tmatesoft.svn.core.wc.SVNClientManager;
 import org.tmatesoft.svn.core.wc.SVNLogClient;
 import org.tmatesoft.svn.core.wc.SVNRevision;
+import org.tmatesoft.svn.core.wc.SVNWCUtil;
 
 public class SvnUtils {
 
@@ -37,7 +39,9 @@ public class SvnUtils {
     try {
       setupSvnKitLib();
       final ArrayList<String> tagList = new ArrayList<String>();
+      ISVNAuthenticationManager authManager = SVNWCUtil.createDefaultAuthenticationManager();
       SVNClientManager manager = SVNClientManager.newInstance();
+      manager.setAuthenticationManager(authManager);
       SVNLogClient client = manager.getLogClient();
       final SVNURL url = SVNURL.parseURIDecoded(tagsUrl);
       client.doList(url,
@@ -47,7 +51,7 @@ public class SvnUtils {
                     false,
                     new ISVNDirEntryHandler() {
                       @Override
-                      public void handleDirEntry(SVNDirEntry dirEntry) throws SVNException {
+                      public void handleDirEntry(SVNDirEntry dirEntry) {
                         if (!dirEntry.getURL().equals(url)) {
                           tagList.add(dirEntry.getName());
                         }

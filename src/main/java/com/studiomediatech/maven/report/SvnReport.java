@@ -18,9 +18,29 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.reporting.AbstractMavenReport;
 
 /**
- * @author olle
+ * <p>
+ * Generates subversion report, showing information about the current state of
+ * the source code in the SCM repository. The report currently produces:
+ * </p>
+ * <dl>
+ * <dt>Tag tree</dt>
+ * <dd>shows a tree view of the current tagged releases, where patch level
+ * versions are listed as branches to specific major and minor releases.</dd>
+ * </dl>
+ * <p>
+ * The report output is bound to the site-phase, generating an HTML page, but it
+ * also prints the report to the console. To run invoke the reporting directly,
+ * use the following:
+ * </p>
+ * 
+ * <pre>
+ * mvn ${project.groupId}:${project.artifactId}:${project.version}:svn-report
+ * </pre>
+ * 
+ * @author Olle Törnström <olle@studiomediatech.com>
  * @goal svn-report
  * @phase site
+ * @since 1.0.0
  */
 public class SvnReport extends AbstractMavenReport {
   public static String SEPARATOR = "------------------------------------------------------------------------";
@@ -99,12 +119,21 @@ public class SvnReport extends AbstractMavenReport {
   }
 
   void fetchTagList() {
-    String svnUrl = SvnUtils.makeCleanUrl(this.project.getScm().getConnection());
+    String connection = getScmConnection();
+    String svnUrl = SvnUtils.makeCleanUrl(connection);
     String tagsUrl = SvnUtils.makeTagsUrl(svnUrl);
     List<String> tags = SvnUtils.fetchTags(tagsUrl);
     for (String tag : tags) {
       this.tags.add(new Tag(tag));
     }
+  }
+
+  private String getScmConnection() {
+    String connection = this.project.getScm().getConnection();
+    if (connection == null) {
+      throw new IllegalArgumentException("project scm connection must not be empty");
+    }
+    return connection;
   }
 
   void partitionTagsByMajorMinor() {
@@ -117,6 +146,7 @@ public class SvnReport extends AbstractMavenReport {
     }
   }
 
+  @SuppressWarnings("unused")
   void generatePlainTextReportOutput(Log log, Locale locale) {
     log.info(SvnReport.SEPARATOR);
     log.info("Generating \"Subversion\" report.");
@@ -132,7 +162,7 @@ public class SvnReport extends AbstractMavenReport {
         log.info(line);
       }
     }
-    log.info(SvnReport.SEPARATOR);
+    log.info("");
   }
 
   void generateHtmlReportOutput(Sink sink, Locale locale) {
@@ -158,7 +188,7 @@ public class SvnReport extends AbstractMavenReport {
     sink.section1_();
   }
 
-  @SuppressWarnings("deprecation")
+  @SuppressWarnings({ "deprecation", "unused" })
   private void pageBody(Sink sink, Locale locale) {
     sink.section2();
     sink.verbatim(true);

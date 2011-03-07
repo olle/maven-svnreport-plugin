@@ -4,7 +4,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Tag implements Comparable<Tag> {
-  private static final Pattern pattern = Pattern.compile("([\\w\\-]+)-(\\d)\\.(\\d)\\.(\\d)(b|beta|-beta)?",
+  private static final Pattern pattern = Pattern.compile("([\\w\\-]+)-(\\d+)\\.(\\d+)\\.(\\d+)(\\.\\d+)?(b|beta|-beta)?",
                                                          Pattern.CASE_INSENSITIVE);
 
   private final Matcher matcher;

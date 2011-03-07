@@ -1,15 +1,16 @@
 package com.studiomediatech.svn;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+
 import java.util.Collection;
 import java.util.TreeSet;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-
 public class TagTest {
 
+  @SuppressWarnings("unused")
   @Test(expected = IllegalArgumentException.class)
   public void ensureNullTagsAreNotAllowed() {
     new Tag(null);
@@ -29,18 +30,27 @@ public class TagTest {
 
   @Test
   public void parsesTagWithNameAndMajorMinorPatchVersion() {
-    Tag tag = new Tag("simple-1.2.3");
+    Tag tag = new Tag("simple-1.2.32");
     assertEquals("simple", tag.getName());
     assertEquals(1, tag.getMajorVersion());
     assertEquals(2, tag.getMinorVersion());
-    assertEquals(3, tag.getPatchVersion());
+    assertEquals(32, tag.getPatchVersion());
   }
 
   @Test
   public void parsesTagWithDashInNameAndMajorMinorPatchVersion() {
-    Tag tag = new Tag("simple-name-1.2.3");
+    Tag tag = new Tag("simple-name-1.21.3");
     assertEquals("simple-name", tag.getName());
     assertEquals(1, tag.getMajorVersion());
+    assertEquals(21, tag.getMinorVersion());
+    assertEquals(3, tag.getPatchVersion());
+  }
+
+  @Test
+  public void parsesTagWithExtraDigitAfterPatch() {
+    Tag tag = new Tag("simple-name-11.2.3.1");
+    assertEquals("simple-name", tag.getName());
+    assertEquals(11, tag.getMajorVersion());
     assertEquals(2, tag.getMinorVersion());
     assertEquals(3, tag.getPatchVersion());
   }
